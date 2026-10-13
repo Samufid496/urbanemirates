@@ -1,0 +1,51 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wp-local",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "-y",
+        "@wp-playground/cli@latest",
+        "server",
+        "--port=9400",
+        "--php=7.4",
+        "--login",
+        "--mount-dir",
+        "./konkani-jobs",
+        "/wordpress/wp-content/plugins/konkani-jobs",
+        "--mount-dir",
+        "./dev/mu-plugins",
+        "/wordpress/wp-content/mu-plugins",
+        "--blueprint=./dev/blueprint.json"
+      ],
+      "port": 9400
+    },
+    {
+      "name": "wp-local-83",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "-y",
+        "@wp-playground/cli@latest",
+        "server",
+        "--port=9401",
+        "--php=8.3",
+        "--login",
+        "--mount-dir",
+        "./konkani-jobs",
+        "/wordpress/wp-content/plugins/konkani-jobs",
+        "--mount-dir",
+        "./dev/mu-plugins",
+        "/wordpress/wp-content/mu-plugins",
+        "--blueprint=./dev/blueprint.json",
+        "--define-bool",
+        "WP_DEBUG",
+        "true",
+        "--define-bool",
+        "WP_DEBUG_DISPLAY",
+        "true"
+      ],
+      "port": 9401
+    }
+  ]
+}

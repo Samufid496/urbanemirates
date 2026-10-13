@@ -1,0 +1,7 @@
+{
+	"landingPage": "/wp-admin/edit.php?post_type=kj_job&page=kj-add-jobs",
+	"steps": [
+		{ "step": "activatePlugin", "pluginPath": "konkani-jobs/konkani-jobs.php" },
+		{ "step": "setSiteOptions", "options": { "blogname": "Konkani Gulf Jobs", "timezone_string": "Asia/Kolkata", "permalink_structure": "/%postname%/" } }
+	]
+}

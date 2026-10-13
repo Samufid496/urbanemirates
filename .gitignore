@@ -1,0 +1,4 @@
+# Local-only
+*.log
+.DS_Store
+Thumbs.db
