@@ -30,6 +30,25 @@ $has_jobs = class_exists( 'KJ_Frontend' );
 		</div>
 	</section>
 
+	<?php
+	$for_you = is_user_logged_in() && class_exists( 'KJ_Alerts' ) ? KJ_Alerts::jobs_for_user( get_current_user_id(), 4 ) : array();
+	if ( $for_you ) :
+		?>
+		<section class="ue-section">
+			<div class="ue-container">
+				<div class="ue-section-head">
+					<h2 class="ue-section-title">Jobs for you</h2>
+					<span class="ue-muted">Based on your CV</span>
+				</div>
+				<div class="kj"><div class="kj-grid">
+					<?php foreach ( $for_you as $job ) : ?>
+						<?php echo KJ_Frontend::card( $job->ID ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+					<?php endforeach; ?>
+				</div></div>
+			</div>
+		</section>
+	<?php endif; ?>
+
 	<section class="ue-section">
 		<div class="ue-container">
 			<div class="ue-section-head">
@@ -42,13 +61,27 @@ $has_jobs = class_exists( 'KJ_Frontend' );
 
 	<section class="ue-section">
 		<div class="ue-container">
+			<div class="ue-band ue-band-cv">
+				<div>
+					<h2 class="ue-band-title">Free CV builder for Gulf jobs</h2>
+					<p>Step by step, with AI help. Download as PDF or Word.</p>
+				</div>
+				<div class="ue-band-actions">
+					<a class="ue-btn ue-btn-primary" href="<?php echo esc_url( ue_page_url( 'kj_page_cv' ) ); ?>">Build my CV</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="ue-section">
+		<div class="ue-container">
 			<div class="ue-band">
 				<div>
 					<h2 class="ue-band-title">Never miss a job</h2>
 					<p>New jobs by email every morning, or follow us on WhatsApp.</p>
 				</div>
 				<div class="ue-band-actions">
-					<a class="ue-btn ue-btn-primary" href="<?php echo esc_url( ue_page_url( 'kj_page_alerts' ) ); ?>">Get job alerts</a>
+					<a class="ue-btn ue-btn-outline" href="<?php echo esc_url( ue_page_url( 'kj_page_alerts' ) ); ?>">Get job alerts</a>
 					<?php if ( ue_whatsapp_channel() ) : ?>
 						<a class="ue-btn ue-btn-wa" href="<?php echo esc_url( ue_whatsapp_channel() ); ?>" target="_blank" rel="noopener"><?php echo ue_icon( 'whatsapp' ); // phpcs:ignore WordPress.Security.EscapeOutput ?> WhatsApp channel</a>
 					<?php endif; ?>

@@ -122,6 +122,9 @@ class KJ_Alerts {
 		if ( isset( $_GET['kj_unsub'] ) ) {
 			self::unsubscribe( sanitize_key( $_GET['kj_unsub'] ) );
 		}
+		if ( isset( $_GET['kj_unsub_user'], $_GET['sig'] ) ) {
+			self::unsubscribe_user( (int) $_GET['kj_unsub_user'], sanitize_text_field( wp_unslash( $_GET['sig'] ) ) );
+		}
 		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['kj_subscribe'] ) ) {
 			return;
 		}
@@ -261,42 +264,58 @@ class KJ_Alerts {
 		if ( ! $run ) {
 			return;
 		}
+		$done = self::send_subscriber_batch( $run );
+		if ( ! $done ) {
+			$done = self::send_account_batch( $run );
+		}
+		if ( ! $done ) {
+			delete_option( 'kj_digest_run' ); // Round finished.
+		}
+	}
+
+	/**
+	 * Jobs published in the two days before the digest round started.
+	 */
+	private static function recent_jobs( $run ) {
+		static $cache = array();
+		if ( ! isset( $cache[ $run ] ) ) {
+			$cache[ $run ] = get_posts(
+				array(
+					'post_type'      => 'kj_job',
+					'post_status'    => 'publish',
+					'posts_per_page' => 200,
+					'date_query'     => array(
+						array(
+							'after'     => '2 days ago',
+							'before'    => gmdate( 'Y-m-d H:i:s', $run ),
+							'column'    => 'post_date_gmt',
+							'inclusive' => true,
+						),
+					),
+				)
+			);
+		}
+		return $cache[ $run ];
+	}
+
+	/**
+	 * Email-only subscribers (the Job Alerts form). Returns how many were processed.
+	 */
+	private static function send_subscriber_batch( $run ) {
 		global $wpdb;
-		$table = self::table();
+		$table     = self::table();
 		$run_mysql = gmdate( 'Y-m-d H:i:s', $run );
-		$subs  = $wpdb->get_results(
+		$subs      = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE status = 'active' AND ( last_sent_at IS NULL OR last_sent_at < %s ) ORDER BY id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$run_mysql,
 				self::BATCH
 			)
 		);
-		if ( ! $subs ) {
-			delete_option( 'kj_digest_run' ); // Round finished.
-			return;
-		}
-
-		// Jobs published since the oldest "last sent" in this batch, up to the run start.
-		$jobs = get_posts(
-			array(
-				'post_type'      => 'kj_job',
-				'post_status'    => 'publish',
-				'posts_per_page' => 200,
-				'date_query'     => array(
-					array(
-						'after'     => '2 days ago',
-						'before'    => $run_mysql,
-						'column'    => 'post_date_gmt',
-						'inclusive' => true,
-					),
-				),
-			)
-		);
-
 		foreach ( $subs as $sub ) {
 			$since   = $sub->last_sent_at ? strtotime( $sub->last_sent_at . ' UTC' ) : $run - DAY_IN_SECONDS;
 			$matches = array();
-			foreach ( $jobs as $job ) {
+			foreach ( self::recent_jobs( $run ) as $job ) {
 				if ( strtotime( $job->post_date_gmt . ' UTC' ) <= $since ) {
 					continue;
 				}
@@ -309,13 +328,150 @@ class KJ_Alerts {
 				$matches[] = $job;
 			}
 			if ( $matches ) {
-				self::send_digest( $sub, array_slice( $matches, 0, 25 ) );
+				self::send_digest( $sub->email, array_slice( $matches, 0, 25 ), add_query_arg( 'kj_unsub', $sub->token, home_url( '/' ) ), 'matching your alerts' );
 			}
 			$wpdb->update( $table, array( 'last_sent_at' => $run_mysql ), array( 'id' => $sub->id ) );
 		}
+		return count( $subs );
 	}
 
-	private static function send_digest( $sub, array $jobs ) {
+	/**
+	 * Signed-in job seekers who turned on "jobs that match my CV". Returns how many were processed.
+	 */
+	private static function send_account_batch( $run ) {
+		if ( ! class_exists( 'KJ_CV' ) ) {
+			return 0;
+		}
+		$users = get_users(
+			array(
+				'role'       => KJ_Accounts::ROLE,
+				'number'     => self::BATCH,
+				'fields'     => array( 'ID', 'user_email', 'user_registered' ),
+				'meta_query' => array(
+					'relation' => 'AND',
+					array(
+						'key'   => 'kj_job_emails',
+						'value' => '1',
+					),
+					array(
+						'relation' => 'OR',
+						array(
+							'key'     => 'kj_last_digest',
+							'compare' => 'NOT EXISTS',
+						),
+						array(
+							'key'     => 'kj_last_digest',
+							'value'   => $run,
+							'compare' => '<',
+							'type'    => 'NUMERIC',
+						),
+					),
+				),
+			)
+		);
+		foreach ( $users as $user ) {
+			$last  = (int) get_user_meta( $user->ID, 'kj_last_digest', true );
+			$since = max( $last ? $last : $run - DAY_IN_SECONDS, strtotime( $user->user_registered . ' UTC' ) );
+			$cv    = KJ_CV::latest_for_user( $user->ID );
+			if ( $cv ) {
+				$matches = array();
+				foreach ( self::recent_jobs( $run ) as $job ) {
+					if ( strtotime( $job->post_date_gmt . ' UTC' ) > $since && self::matches_cv( $job, $cv->cv ) ) {
+						$matches[] = $job;
+					}
+				}
+				if ( $matches ) {
+					self::send_digest( $user->user_email, array_slice( $matches, 0, 25 ), self::account_unsub_url( $user->ID ), 'that match your CV' );
+				}
+			}
+			update_user_meta( $user->ID, 'kj_last_digest', $run );
+		}
+		return count( $users );
+	}
+
+	/**
+	 * Does a job fit what the CV says the person wants? Country must match (if chosen), then
+	 * the job type or a word from the target job title.
+	 */
+	public static function matches_cv( $job, array $cv ) {
+		$countries = $cv['target']['countries'];
+		if ( $countries && ! in_array( kj_term_slug( $job->ID, 'kj_country' ), $countries, true ) ) {
+			return false;
+		}
+		$category = $cv['target']['category'];
+		$words    = array();
+		$skip     = array( 'and', 'the', 'for', 'senior', 'junior', 'staff', 'assistant', 'manager', 'officer', 'executive', 'head', 'lead' );
+		foreach ( preg_split( '/[^a-z0-9]+/', strtolower( $cv['target']['title'] ) ) as $w ) {
+			if ( strlen( $w ) >= 3 && ! in_array( $w, $skip, true ) ) {
+				$words[] = $w;
+			}
+		}
+		if ( ! $category && ! $words ) {
+			return true;
+		}
+		if ( $category && kj_term_slug( $job->ID, 'kj_category' ) === $category ) {
+			return true;
+		}
+		$title = strtolower( get_the_title( $job ) );
+		foreach ( $words as $w ) {
+			if ( false !== strpos( $title, $w ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Recent jobs for a signed-in person's newest CV ("Jobs for you").
+	 */
+	public static function jobs_for_user( $user_id, $limit = 6 ) {
+		if ( ! class_exists( 'KJ_CV' ) ) {
+			return array();
+		}
+		$cv = KJ_CV::latest_for_user( $user_id );
+		if ( ! $cv || ( ! $cv->cv['target']['title'] && ! $cv->cv['target']['category'] ) ) {
+			return array();
+		}
+		$jobs = get_posts(
+			array(
+				'post_type'      => 'kj_job',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'date_query'     => array( array( 'after' => '21 days ago' ) ),
+			)
+		);
+		$out = array();
+		foreach ( $jobs as $job ) {
+			if ( self::matches_cv( $job, $cv->cv ) ) {
+				$out[] = $job;
+				if ( count( $out ) >= $limit ) {
+					break;
+				}
+			}
+		}
+		return $out;
+	}
+
+	public static function account_unsub_url( $user_id ) {
+		return add_query_arg(
+			array(
+				'kj_unsub_user' => (int) $user_id,
+				'sig'           => substr( wp_hash( 'unsub|' . (int) $user_id ), 0, 20 ),
+			),
+			home_url( '/' )
+		);
+	}
+
+	private static function unsubscribe_user( $user_id, $sig ) {
+		if ( hash_equals( substr( wp_hash( 'unsub|' . (int) $user_id ), 0, 20 ), (string) $sig ) ) {
+			update_user_meta( (int) $user_id, 'kj_job_emails', 0 );
+			update_user_meta( (int) $user_id, 'kj_job_emails_changed_at', time() );
+		}
+		wp_safe_redirect( add_query_arg( 'kj_msg', 'unsub', self::alerts_url() ) );
+		exit;
+	}
+
+	private static function send_digest( $email, array $jobs, $unsub_url, $why ) {
 		$flags = kj_country_flags();
 		$rows  = '';
 		foreach ( $jobs as $job ) {
@@ -331,11 +487,11 @@ class KJ_Alerts {
 		}
 		$site  = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$count = count( $jobs );
-		$body  = '<p>Namaskar! Here ' . ( 1 === $count ? 'is 1 new job' : 'are ' . $count . ' new jobs' ) . ' matching your alerts:</p>'
+		$body  = '<p>Namaskar! Here ' . ( 1 === $count ? 'is 1 new job' : 'are ' . $count . ' new jobs' ) . ' ' . esc_html( $why ) . ':</p>'
 			. '<table role="presentation" width="100%" cellspacing="0" cellpadding="0">' . $rows . '</table>'
 			. '<p style="margin-top:20px"><a href="' . esc_url( get_permalink( (int) get_option( 'kj_page_jobs' ) ) ) . '" style="color:#2357E8">See all jobs on ' . esc_html( $site ) . ' →</a></p>'
 			. '<p style="background:#fff7e6;padding:10px;border-radius:6px;font-size:13px">⚠️ Never pay any fee to get a job. Genuine employers do not charge for visa, registration or training.</p>';
-		self::mail( $sub->email, $count . ' new Gulf job' . ( 1 === $count ? '' : 's' ) . ' for you — ' . wp_date( 'j M' ), $body, $sub->token );
+		kj_send_email( $email, $count . ' new Gulf job' . ( 1 === $count ? '' : 's' ) . ' for you — ' . wp_date( 'j M' ), $body, $unsub_url );
 	}
 
 	private static function mail( $to, $subject, $inner_html, $token ) {

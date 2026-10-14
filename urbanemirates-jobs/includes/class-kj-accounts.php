@@ -480,6 +480,18 @@ class KJ_Accounts {
 				</form>
 			</section>
 
+			<?php $for_you = KJ_Alerts::jobs_for_user( $user->ID, 4 ); ?>
+			<?php if ( $for_you ) : ?>
+				<section class="kj-account-section">
+					<h3 class="kj-label">Jobs for you</h3>
+					<ul class="kj-account-list">
+						<?php foreach ( $for_you as $job ) : ?>
+							<li><a href="<?php echo esc_url( get_permalink( $job ) ); ?>"><strong><?php echo esc_html( get_the_title( $job ) ); ?></strong><span class="kj-muted"><?php echo esc_html( trim( get_post_meta( $job->ID, '_kj_company', true ) . ' · ' . get_post_meta( $job->ID, '_kj_city', true ) . ' · ' . kj_time_ago( $job->ID ), ' ·' ) ); ?></span></a></li>
+						<?php endforeach; ?>
+					</ul>
+				</section>
+			<?php endif; ?>
+
 			<section class="kj-account-section">
 				<h3 class="kj-label">Saved jobs</h3>
 				<?php if ( ! $saved ) : ?>

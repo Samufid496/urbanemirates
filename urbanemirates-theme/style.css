@@ -131,6 +131,7 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -.02em; }
 .ue-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .ue-link-strong { font-weight: 700; text-decoration: none; }
 .ue-band { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding: 28px 32px; border-radius: 22px; background: var(--ue-soft); }
+.ue-band-cv { background: var(--ue-blue-soft); }
 .ue-band-title { margin: 0 0 4px; font-size: 22px; font-weight: 900; }
 .ue-band p { margin: 0; color: var(--ue-muted); }
 .ue-band-actions { display: flex; flex-wrap: wrap; gap: 10px; }

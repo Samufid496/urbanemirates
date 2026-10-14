@@ -224,3 +224,19 @@ add_action( 'wp_loaded', function () {
 	</script></body></html><?php
 	exit;
 } );
+
+// DEV ONLY: /?kj_dev_newjob=Title&country=uae&cat=finance publishes one job now.
+add_action( 'wp_loaded', function () {
+	if ( ! isset( $_GET['kj_dev_newjob'] ) ) {
+		return;
+	}
+	$id = wp_insert_post( array( 'post_type' => 'kj_job', 'post_status' => 'publish', 'post_title' => sanitize_text_field( $_GET['kj_dev_newjob'] ), 'post_content' => 'Test job.' ) );
+	update_post_meta( $id, '_kj_company', 'Test Co' );
+	update_post_meta( $id, '_kj_city', 'Dubai' );
+	update_post_meta( $id, '_kj_apply_url', 'https://example.com/job' );
+	update_post_meta( $id, '_kj_source', 'example.com' );
+	wp_set_object_terms( $id, array( sanitize_key( $_GET['country'] ?? 'uae' ) ), 'kj_country' );
+	wp_set_object_terms( $id, array( sanitize_key( $_GET['cat'] ?? 'other' ) ), 'kj_category' );
+	echo 'job ' . $id;
+	exit;
+} );
