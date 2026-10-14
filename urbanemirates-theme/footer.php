@@ -33,6 +33,9 @@
 				if ( $privacy ) {
 					$links[] = array( 'Privacy policy', $privacy );
 				}
+				if ( get_option( 'kj_page_terms' ) ) {
+					$links[] = array( 'Terms', ue_page_url( 'kj_page_terms' ) );
+				}
 				echo '<ul class="ue-footer-list">';
 				foreach ( $links as $link ) {
 					echo '<li><a href="' . esc_url( $link[1] ) . '">' . esc_html( $link[0] ) . '</a></li>';

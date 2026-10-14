@@ -389,7 +389,6 @@ class KJ_Accounts {
 			</form>
 			<?php
 		else :
-			$terms   = get_privacy_policy_url();
 			?>
 			<h1 class="kj-auth-title">Build your Gulf CV. Free.</h1>
 			<p class="kj-auth-sub">Sign in with your email. We'll send you a 6-digit code — no password needed.</p>
@@ -402,7 +401,7 @@ class KJ_Accounts {
 				</label>
 				<label class="kj-consent">
 					<input type="checkbox" name="kj_terms" value="1" required>
-					<span>I agree to the <a href="<?php echo esc_url( $terms ? $terms : home_url( '/' ) ); ?>" target="_blank">Terms and Privacy Policy</a>.</span>
+					<span>I agree to the <a href="<?php echo esc_url( KJ_Legal::terms_url() ); ?>" target="_blank">Terms</a> and <a href="<?php echo esc_url( KJ_Legal::privacy_url() ); ?>" target="_blank">Privacy Policy</a>.</span>
 				</label>
 				<label class="kj-consent">
 					<input type="checkbox" name="kj_job_emails" value="1">

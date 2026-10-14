@@ -20,7 +20,13 @@
         "--mount-dir",
         "./dev/mu-plugins",
         "/wordpress/wp-content/mu-plugins",
-        "--blueprint=./dev/blueprint.json"
+        "--blueprint=./dev/blueprint.json",
+        "--define-bool",
+        "WP_DEBUG",
+        "true",
+        "--define-bool",
+        "WP_DEBUG_DISPLAY",
+        "true"
       ],
       "port": 9400
     },

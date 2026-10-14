@@ -31,6 +31,8 @@ require_once KJ_DIR . 'includes/class-kj-accounts.php';
 require_once KJ_DIR . 'includes/class-kj-pdf.php';
 require_once KJ_DIR . 'includes/class-kj-cv-render.php';
 require_once KJ_DIR . 'includes/class-kj-cv.php';
+require_once KJ_DIR . 'includes/class-kj-mail.php';
+require_once KJ_DIR . 'includes/class-kj-legal.php';
 
 KJ_Post_Types::init();
 KJ_Importer::init();
@@ -40,9 +42,11 @@ KJ_Alerts::init();
 KJ_Cron::init();
 KJ_Accounts::init();
 KJ_CV::init();
+KJ_Mail::init();
+KJ_Legal::init();
 
 // Bump when install steps change; sites upgrade themselves on the next page load.
-define( 'KJ_SCHEMA', 3 );
+define( 'KJ_SCHEMA', 4 );
 add_action( 'init', 'kj_maybe_upgrade', 20 );
 
 register_activation_hook( __FILE__, 'kj_activate' );
@@ -66,6 +70,7 @@ function kj_install() {
 	KJ_Accounts::create_pages();
 	KJ_CV::create_table();
 	KJ_CV::create_page();
+	KJ_Legal::create_pages();
 	if ( false === get_option( 'kj_settings' ) ) {
 		add_option( 'kj_settings', kj_default_settings() );
 	}

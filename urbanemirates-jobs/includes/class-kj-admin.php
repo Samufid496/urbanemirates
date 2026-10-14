@@ -481,6 +481,18 @@ Hotel Receptionist – Doha
 		$out['whatsapp_channel'] = esc_url_raw( $input['whatsapp_channel'] ?? '' );
 		$out['inr_rates']        = sanitize_textarea_field( $input['inr_rates'] ?? '' );
 
+		$out['contact_email'] = sanitize_email( $input['contact_email'] ?? '' );
+		$out['smtp_host']     = sanitize_text_field( $input['smtp_host'] ?? '' );
+		$out['smtp_port']     = in_array( (int) ( $input['smtp_port'] ?? 465 ), array( 465, 587 ), true ) ? (int) $input['smtp_port'] : 465;
+		$out['smtp_user']     = sanitize_text_field( $input['smtp_user'] ?? '' );
+		$out['mail_from']     = sanitize_email( $input['mail_from'] ?? '' );
+		if ( isset( $input['smtp_pass'] ) && '' !== $input['smtp_pass'] ) {
+			$out['smtp_pass'] = $input['smtp_pass']; // Stored as typed; passwords may contain any character.
+		}
+		if ( ! empty( $input['clear_smtp_pass'] ) ) {
+			$out['smtp_pass'] = '';
+		}
+
 		$out['turnstile_site'] = sanitize_text_field( $input['turnstile_site'] ?? '' );
 		if ( ! empty( $input['turnstile_secret'] ) ) {
 			$out['turnstile_secret'] = sanitize_text_field( $input['turnstile_secret'] );
@@ -600,6 +612,21 @@ Hotel Receptionist – Doha
 					</tr>
 				</table>
 
+				<h2>Email sending</h2>
+				<p class="description">Send sign-in codes and job emails from your own mailbox so they reach the inbox. For Hostinger Email: host <code>smtp.hostinger.com</code>, port 465, your full mailbox address and its password.</p>
+				<table class="form-table" role="presentation">
+					<tr><th scope="row"><label for="kj-smtp-host">SMTP host</label></th><td><input type="text" id="kj-smtp-host" name="kj_settings[smtp_host]" value="<?php echo esc_attr( $s['smtp_host'] ); ?>" class="regular-text" placeholder="smtp.hostinger.com"></td></tr>
+					<tr><th scope="row"><label for="kj-smtp-port">Port</label></th><td><select id="kj-smtp-port" name="kj_settings[smtp_port]"><option value="465" <?php selected( (int) $s['smtp_port'], 465 ); ?>>465 (SSL)</option><option value="587" <?php selected( (int) $s['smtp_port'], 587 ); ?>>587 (TLS)</option></select></td></tr>
+					<tr><th scope="row"><label for="kj-smtp-user">Mailbox</label></th><td><input type="email" id="kj-smtp-user" name="kj_settings[smtp_user]" value="<?php echo esc_attr( $s['smtp_user'] ); ?>" class="regular-text" placeholder="hello@urbanemirates.com" autocomplete="off"></td></tr>
+					<tr><th scope="row"><label for="kj-smtp-pass">Mailbox password</label></th><td>
+						<?php if ( defined( 'KJ_SMTP_PASSWORD' ) && KJ_SMTP_PASSWORD ) : ?><p>✅ Set in <code>wp-config.php</code> (KJ_SMTP_PASSWORD).</p><?php else : ?>
+						<input type="password" id="kj-smtp-pass" name="kj_settings[smtp_pass]" class="regular-text" autocomplete="new-password" placeholder="<?php echo $s['smtp_pass'] ? esc_attr( '•••••••• saved — leave blank to keep' ) : ''; ?>">
+						<?php if ( $s['smtp_pass'] ) : ?><label><input type="checkbox" name="kj_settings[clear_smtp_pass]" value="1"> Remove saved password</label><?php endif; ?>
+						<?php endif; ?></td></tr>
+					<tr><th scope="row"><label for="kj-mail-from">Send from</label></th><td><input type="email" id="kj-mail-from" name="kj_settings[mail_from]" value="<?php echo esc_attr( $s['mail_from'] ); ?>" class="regular-text" placeholder="Same as mailbox"></td></tr>
+					<tr><th scope="row"><label for="kj-contact">Contact email</label></th><td><input type="email" id="kj-contact" name="kj_settings[contact_email]" value="<?php echo esc_attr( $s['contact_email'] ); ?>" class="regular-text" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"><p class="description">Shown on the Privacy Policy and Terms pages for questions and data requests.</p></td></tr>
+				</table>
+
 				<h2>Bot protection (Cloudflare Turnstile)</h2>
 				<p class="description">Free from Cloudflare (dash.cloudflare.com → Turnstile → Add site → urbanemirates.com). Until both keys are set, forms use a hidden trap field and rate limits.</p>
 				<table class="form-table" role="presentation">
@@ -638,6 +665,16 @@ Hotel Receptionist – Doha
 				</table>
 				<?php submit_button(); ?>
 			</form>
+
+			<h2>Test email</h2>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="kj_test_email">
+				<?php wp_nonce_field( 'kj_test_email' ); ?>
+				<p>Sends a test email to <?php echo esc_html( wp_get_current_user()->user_email ); ?>. Save your settings first.</p>
+				<?php submit_button( 'Send test email', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<div class="notice notice-info inline"><p><strong>Before launch:</strong> the Privacy Policy and Terms of Use pages were created as drafts written for this website. Please have a lawyer review them, and update them if you add ads.</p></div>
 
 			<h2>Test Claude connection</h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

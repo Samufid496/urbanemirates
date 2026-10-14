@@ -17,6 +17,12 @@ function kj_default_settings() {
 		'digest_hour'       => 8,      // Hour (site timezone) to send the daily email digest.
 		'whatsapp_channel'  => '',     // Public WhatsApp Channel link shown on the site.
 		'job_schema'        => 1,      // Output Google JobPosting structured data.
+		'contact_email'     => '',     // Shown on Privacy/Terms pages; defaults to the admin email.
+		'smtp_host'         => '',     // e.g. smtp.hostinger.com (empty = WordPress default mail).
+		'smtp_port'         => 465,
+		'smtp_user'         => '',     // Full mailbox address, e.g. hello@urbanemirates.com.
+		'smtp_pass'         => '',
+		'mail_from'         => '',     // From address (defaults to the SMTP mailbox).
 		'cv_ai_daily'       => 20,     // AI help actions per person per day in the CV builder.
 		'turnstile_site'    => '',     // Cloudflare Turnstile site key (bot protection on forms).
 		'turnstile_secret'  => '',     // Cloudflare Turnstile secret key.
