@@ -39,6 +39,15 @@ class KJ_Claude {
 			return $pre;
 		}
 
+		return self::request( self::system_prompt(), self::user_message( $raw_text, $url ), self::schema() );
+	}
+
+	/**
+	 * One structured request to Claude: system prompt + user message in, JSON matching $schema out.
+	 *
+	 * @return array|WP_Error Decoded JSON (plus '_usage'), or an error carrying array( 'retry' => bool ).
+	 */
+	public static function request( $system, $user_message, array $schema, $max_tokens = 16000 ) {
 		$api_key = kj_api_key();
 		if ( '' === $api_key ) {
 			return new WP_Error( 'kj_no_key', 'Claude API key is missing. Add it under Urban Emirates → Settings.', array( 'retry' => false ) );
@@ -51,19 +60,19 @@ class KJ_Claude {
 
 		$body = array(
 			'model'         => $model,
-			'max_tokens'    => 16000,
-			'system'        => self::system_prompt(),
+			'max_tokens'    => $max_tokens,
+			'system'        => $system,
 			'messages'      => array(
 				array(
 					'role'    => 'user',
-					'content' => self::user_message( $raw_text, $url ),
+					'content' => $user_message,
 				),
 			),
 			'output_config' => array(
 				'effort' => (string) kj_setting( 'effort' ),
 				'format' => array(
 					'type'   => 'json_schema',
-					'schema' => self::schema(),
+					'schema' => $schema,
 				),
 			),
 		);
@@ -109,7 +118,7 @@ class KJ_Claude {
 			return new WP_Error( 'kj_refusal', 'Claude declined to process this text. Please review it manually.', array( 'retry' => false ) );
 		}
 		if ( 'max_tokens' === $stop_reason ) {
-			return new WP_Error( 'kj_truncated', 'Claude response was cut off. Try pasting a shorter job text.', array( 'retry' => false ) );
+			return new WP_Error( 'kj_truncated', 'Claude response was cut off. Try a shorter text.', array( 'retry' => false ) );
 		}
 
 		$json = '';
@@ -121,7 +130,7 @@ class KJ_Claude {
 
 		$result = json_decode( $json, true );
 		if ( ! is_array( $result ) ) {
-			return new WP_Error( 'kj_parse', 'Could not read Claude\'s answer.', array( 'retry' => true ) );
+			return new WP_Error( 'kj_parse', 'Could not read the AI answer.', array( 'retry' => true ) );
 		}
 
 		$result['_usage'] = array(

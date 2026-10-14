@@ -17,6 +17,7 @@ function kj_default_settings() {
 		'digest_hour'       => 8,      // Hour (site timezone) to send the daily email digest.
 		'whatsapp_channel'  => '',     // Public WhatsApp Channel link shown on the site.
 		'job_schema'        => 1,      // Output Google JobPosting structured data.
+		'cv_ai_daily'       => 20,     // AI help actions per person per day in the CV builder.
 		'turnstile_site'    => '',     // Cloudflare Turnstile site key (bot protection on forms).
 		'turnstile_secret'  => '',     // Cloudflare Turnstile secret key.
 		'ad_results'        => '',     // AdSense code shown after the 5th search result (empty = no ad).

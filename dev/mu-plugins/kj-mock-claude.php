@@ -151,3 +151,76 @@ add_action( 'wp_loaded', function () {
 		exit;
 	}
 } );
+
+// DEV ONLY: fake CV AI answers.
+add_filter( 'kj_pre_cv_ai', function ( $pre, $action, $cv ) {
+	switch ( $action ) {
+		case 'summary':
+			return array( 'summary' => 'Accountant with 5 years in UAE trading companies, handling billing, VAT returns and monthly reporting. Residence visa holder in Dubai, available with 1 month notice.' );
+		case 'improve':
+			return array( 'bullets' => array( 'Managed end-to-end billing and accounts for a Dubai trading company', 'Prepared and filed UAE VAT returns on time', 'Produced monthly financial reports for senior management' ) );
+		case 'check':
+			return array( 'score' => 8, 'tips' => array( 'Add your UAE driving licence if you have one', 'Add Tally or SAP to skills if you use them' ), 'strengths' => array( 'Clear UAE experience with dates', 'Visa status and notice period stated' ) );
+		case 'tailor':
+			return array( 'summary' => 'Accountant with 5 years of UAE VAT and month-end experience, ready for a senior role in Riyadh.', 'skills' => 'VAT returns, Month-end close, Excel, Billing', 'notes' => array( 'Highlight your VAT filing experience first', 'The job asks for CA Inter — add it if you have it' ) );
+	}
+	return $pre;
+}, 10, 3 );
+
+// DEV ONLY: /?kj_dev_lint=1 checks every PHP file of our plugin and theme for syntax errors
+// (runs before plugins load, so it works even when a file is broken).
+if ( isset( $_GET['kj_dev_lint'] ) ) {
+	header( 'Content-Type: text/plain' );
+	$dirs  = array( WP_CONTENT_DIR . '/plugins/urbanemirates-jobs', WP_CONTENT_DIR . '/themes/urbanemirates-theme' );
+	$bad   = 0;
+	$count = 0;
+	foreach ( $dirs as $dir ) {
+		$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $it as $file ) {
+			if ( 'php' !== $file->getExtension() ) {
+				continue;
+			}
+			$count++;
+			try {
+				token_get_all( file_get_contents( $file->getPathname() ), TOKEN_PARSE );
+			} catch ( ParseError $e ) {
+				$bad++;
+				echo 'ERROR ' . str_replace( WP_CONTENT_DIR, '', $file->getPathname() ) . ':' . $e->getLine() . ' ' . $e->getMessage() . "\n";
+			}
+		}
+	}
+	echo "checked $count files, $bad with errors\n";
+	exit;
+}
+
+// DEV ONLY: /?kj_dev_pdf=CVID&template=gulf shows a CV's PDF inline (no login) for visual checks.
+add_action( 'wp_loaded', function () {
+	if ( ! isset( $_GET['kj_dev_pdf'] ) ) {
+		return;
+	}
+	$row = KJ_CV::get( (int) $_GET['kj_dev_pdf'] );
+	$t   = isset( $_GET['template'] ) ? sanitize_key( $_GET['template'] ) : $row->template;
+	header( 'Content-Type: application/pdf' );
+	header( 'Content-Disposition: inline; filename="cv.pdf"' );
+	echo isset( $_GET['docx'] ) ? KJ_CV_Render::docx( $row->cv, $t ) : KJ_CV_Render::pdf( $row->cv, $t );
+	exit;
+} );
+
+// DEV ONLY: /?kj_dev_pdfview=CVID&template=gulf renders the PDF to an image with PDF.js for visual checks.
+add_action( 'wp_loaded', function () {
+	if ( ! isset( $_GET['kj_dev_pdfview'] ) ) {
+		return;
+	}
+	$src = add_query_arg( array( 'kj_dev_pdf' => (int) $_GET['kj_dev_pdfview'], 'template' => sanitize_key( $_GET['template'] ?? 'gulf' ) ), home_url( '/' ) );
+	?><!doctype html><html><head><meta charset="utf-8"><title>PDF check</title>
+	<style>body{margin:0;background:#888;display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px}canvas{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.3)}</style>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script></head><body>
+	<script>
+	pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+	pdfjsLib.getDocument(<?php echo wp_json_encode( $src ); ?>).promise.then(async function(pdf){
+		document.title='pages:'+pdf.numPages;
+		for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);const vp=page.getViewport({scale:1.3});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;document.body.appendChild(c);await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;}
+	}).catch(function(e){document.body.textContent='ERROR '+e.message;});
+	</script></body></html><?php
+	exit;
+} );

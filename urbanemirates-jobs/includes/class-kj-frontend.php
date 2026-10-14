@@ -562,6 +562,7 @@ class KJ_Frontend {
 				echo esc_html( implode( ' · ', $bits ) );
 				?>
 			</p>
+			<?php echo apply_filters( 'kj_job_after_source', '', $id ); // phpcs:ignore WordPress.Security.EscapeOutput -- e.g. the "Tailor my CV" link. ?>
 
 			<?php echo kj_ad_slot( 'job' ); // phpcs:ignore WordPress.Security.EscapeOutput -- admin-provided ad code. ?>
 

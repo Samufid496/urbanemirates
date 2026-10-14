@@ -476,6 +476,7 @@ Hotel Receptionist – Doha
 		$out['auto_publish']     = empty( $input['auto_publish'] ) ? 0 : 1;
 		$out['job_schema']       = empty( $input['job_schema'] ) ? 0 : 1;
 		$out['expiry_days']      = max( 3, min( 120, (int) ( $input['expiry_days'] ?? 30 ) ) );
+		$out['cv_ai_daily']      = max( 1, min( 200, (int) ( $input['cv_ai_daily'] ?? 20 ) ) );
 		$out['digest_hour']      = max( 0, min( 23, (int) ( $input['digest_hour'] ?? 8 ) ) );
 		$out['whatsapp_channel'] = esc_url_raw( $input['whatsapp_channel'] ?? '' );
 		$out['inr_rates']        = sanitize_textarea_field( $input['inr_rates'] ?? '' );
@@ -554,6 +555,13 @@ Hotel Receptionist – Doha
 							</select>
 							<p class="description">Higher = more careful but slower and costlier. Medium is a good default.</p>
 						</td>
+					</tr>
+				</table>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="kj-cv-ai">CV builder AI limit</label></th>
+						<td><input type="number" id="kj-cv-ai" name="kj_settings[cv_ai_daily]" value="<?php echo (int) $s['cv_ai_daily']; ?>" min="1" max="200" class="small-text"> AI actions per person per day (keeps your Claude bill predictable)</td>
 					</tr>
 				</table>
 

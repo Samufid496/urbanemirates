@@ -67,6 +67,7 @@ function ue_icon( $name ) {
 function ue_default_menu_items() {
 	return array(
 		array( 'Jobs', ue_jobs_url() ),
+		array( 'CV builder', ue_page_url( 'kj_page_cv' ) ),
 		array( 'Countries', home_url( '/#countries' ) ),
 		array( 'Scam safety', ue_page_url( 'kj_page_safety' ) ),
 	);
@@ -128,6 +129,6 @@ function ue_account_link( $class ) {
  * Sign-in and My account print their own main heading, so the page title is skipped there.
  */
 function ue_page_has_own_heading() {
-	$own = array( (int) get_option( 'kj_page_signin' ), (int) get_option( 'kj_page_account' ) );
+	$own = array( (int) get_option( 'kj_page_signin' ), (int) get_option( 'kj_page_account' ), (int) get_option( 'kj_page_cv' ) );
 	return in_array( (int) get_the_ID(), array_filter( $own ), true );
 }

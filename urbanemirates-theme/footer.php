@@ -25,6 +25,7 @@
 			} else {
 				$links = array(
 					array( 'Jobs', ue_jobs_url() ),
+					array( 'CV builder', ue_page_url( 'kj_page_cv' ) ),
 					array( 'Job alerts', ue_page_url( 'kj_page_alerts' ) ),
 					array( 'Scam safety', ue_page_url( 'kj_page_safety' ) ),
 				);
