@@ -17,6 +17,9 @@ function kj_default_settings() {
 		'digest_hour'       => 8,      // Hour (site timezone) to send the daily email digest.
 		'whatsapp_channel'  => '',     // Public WhatsApp Channel link shown on the site.
 		'job_schema'        => 1,      // Output Google JobPosting structured data.
+		'ad_results'        => '',     // AdSense code shown after the 5th search result (empty = no ad).
+		'ad_job'            => '',     // AdSense code on job pages, after "You need".
+		'ad_sidebar'        => '',     // AdSense code in the desktop sidebar.
 		'inr_rates'         => "AED=24\nSAR=23.5\nQAR=24.2\nKWD=288\nOMR=229\nBHD=234\nUSD=88\nEUR=100\nGBP=117",
 	);
 }
@@ -189,7 +192,7 @@ function kj_inr_rates() {
 /**
  * Human salary line, e.g. "AED 3,000 – 4,500 / month (≈ ₹72,000 – ₹1,08,000)".
  */
-function kj_format_salary( $post_id ) {
+function kj_format_salary( $post_id, $with_inr = true ) {
 	$min      = (float) get_post_meta( $post_id, '_kj_salary_min', true );
 	$max      = (float) get_post_meta( $post_id, '_kj_salary_max', true );
 	$currency = strtoupper( (string) get_post_meta( $post_id, '_kj_salary_currency', true ) );
@@ -206,12 +209,12 @@ function kj_format_salary( $post_id ) {
 		$min = $max;
 	}
 
-	$range  = number_format_i18n( $min ) . ( $max > $min ? ' – ' . number_format_i18n( $max ) : '' );
+	$range  = number_format_i18n( $min ) . ( $max > $min ? '–' . number_format_i18n( $max ) : '' );
 	$suffix = in_array( $period, array( 'month', 'year', 'hour', 'day' ), true ) ? ' / ' . $period : '';
 	$out    = trim( $currency . ' ' . $range ) . $suffix;
 
 	$rates = kj_inr_rates();
-	if ( $currency && 'INR' !== $currency && isset( $rates[ $currency ] ) ) {
+	if ( $with_inr && $currency && 'INR' !== $currency && isset( $rates[ $currency ] ) ) {
 		$inr_min = kj_format_inr( $min * $rates[ $currency ] );
 		$inr_max = kj_format_inr( $max * $rates[ $currency ] );
 		$out    .= ' (≈ ₹' . $inr_min . ( $max > $min ? ' – ₹' . $inr_max : '' ) . ')';
@@ -253,4 +256,121 @@ function kj_term_name( $post_id, $taxonomy ) {
 function kj_term_slug( $post_id, $taxonomy ) {
 	$terms = get_the_terms( $post_id, $taxonomy );
 	return ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->slug : '';
+}
+
+
+/**
+ * Two-letter country codes for tiles and schema.
+ */
+function kj_country_codes() {
+	return array(
+		'uae'          => 'AE',
+		'saudi-arabia' => 'SA',
+		'qatar'        => 'QA',
+		'kuwait'       => 'KW',
+		'oman'         => 'OM',
+		'bahrain'      => 'BH',
+		'other'        => 'Abroad',
+	);
+}
+
+/**
+ * Short benefit names for cards and the "Included" line.
+ */
+function kj_short_benefit( $label ) {
+	$short = array(
+		'Visa provided'     => 'Visa',
+		'Medical insurance' => 'Medical',
+	);
+	return isset( $short[ $label ] ) ? $short[ $label ] : $label;
+}
+
+function kj_time_ago( $post_id ) {
+	return human_time_diff( get_post_time( 'U', true, $post_id ), time() ) . ' ago';
+}
+
+/**
+ * Compact salary for the facts row, e.g. "AED 6–8k" or "KWD 250–350".
+ */
+function kj_salary_short( $post_id ) {
+	$min      = (float) get_post_meta( $post_id, '_kj_salary_min', true );
+	$max      = (float) get_post_meta( $post_id, '_kj_salary_max', true );
+	$currency = strtoupper( (string) get_post_meta( $post_id, '_kj_salary_currency', true ) );
+	if ( $min <= 0 && $max <= 0 ) {
+		$text = (string) get_post_meta( $post_id, '_kj_salary_text', true );
+		return $text;
+	}
+	$min = $min > 0 ? $min : $max;
+	$max = $max > 0 ? $max : $min;
+	$fmt = function ( $n ) {
+		if ( $n >= 1000 && 0 == fmod( $n, 100 ) ) { // phpcs:ignore Universal.Operators.StrictComparisons
+			return rtrim( rtrim( number_format( $n / 1000, 1, '.', '' ), '0' ), '.' );
+		}
+		return number_format_i18n( $n );
+	};
+	$k     = $min >= 1000 && 0 == fmod( $min, 100 ) && 0 == fmod( $max, 100 ); // phpcs:ignore Universal.Operators.StrictComparisons
+	$range = $k ? $fmt( $min ) . ( $max > $min ? '–' . $fmt( $max ) : '' ) . 'k' : number_format_i18n( $min ) . ( $max > $min ? '–' . number_format_i18n( $max ) : '' );
+	return trim( $currency . ' ' . $range );
+}
+
+/**
+ * Approximate rupees for the same salary, e.g. "₹1.4–1.9 lakh" or "₹72,000".
+ */
+function kj_salary_inr( $post_id ) {
+	$min      = (float) get_post_meta( $post_id, '_kj_salary_min', true );
+	$max      = (float) get_post_meta( $post_id, '_kj_salary_max', true );
+	$currency = strtoupper( (string) get_post_meta( $post_id, '_kj_salary_currency', true ) );
+	$rates    = kj_inr_rates();
+	if ( ( $min <= 0 && $max <= 0 ) || ! isset( $rates[ $currency ] ) ) {
+		return '';
+	}
+	$lo  = $min > 0 ? $min : $max;
+	$hi  = $max > 0 ? $max : $lo;
+	$min = $lo * $rates[ $currency ];
+	$max = $hi * $rates[ $currency ];
+	if ( $min >= 100000 ) {
+		$a = rtrim( rtrim( number_format( $min / 100000, 1 ), '0' ), '.' );
+		$b = rtrim( rtrim( number_format( $max / 100000, 1 ), '0' ), '.' );
+		return '₹' . $a . ( $b !== $a ? '–' . $b : '' ) . ' lakh';
+	}
+	return '₹' . kj_format_inr( $min ) . ( $max > $min ? '–' . kj_format_inr( $max ) : '' );
+}
+
+/**
+ * A reserved ad space. Prints nothing until AdSense code is pasted in Settings.
+ */
+function kj_ad_slot( $slot ) {
+	$code = (string) kj_setting( 'ad_' . $slot );
+	if ( '' === trim( $code ) ) {
+		return '';
+	}
+	return '<aside class="kj-ad kj-ad-' . esc_attr( $slot ) . '" aria-label="Advertisement"><span class="kj-ad-label">Advertisement</span>' . $code . '</aside>';
+}
+
+/**
+ * Inline line icons (stroke, currentColor). Decorative: hidden from screen readers.
+ */
+function kj_icon( $name ) {
+	$paths = array(
+		'search'    => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+		'sliders'   => '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+		'chevron'   => '<path d="m9 18 6-6-6-6"/>',
+		'briefcase' => '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+		'cash'      => '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+		'pin'       => '<path d="M12 22s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+		'shield'    => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+		'check'     => '<path d="M20 6 9 17l-5-5"/>',
+		'share'     => '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>',
+		'external'  => '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
+		'menu'      => '<path d="M4 7h16M4 12h16M4 17h16"/>',
+		'close'     => '<path d="M6 6l12 12M18 6 6 18"/>',
+		'bell'      => '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+		'bookmark'  => '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+		'whatsapp'  => '<path d="M3 21l1.6-4.8A8.5 8.5 0 1 1 8 19.6z"/>',
+		'back'      => '<path d="M15 18l-6-6 6-6"/>',
+	);
+	if ( ! isset( $paths[ $name ] ) ) {
+		return '';
+	}
+	return '<svg class="kj-icon kj-icon-' . esc_attr( $name ) . '" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $paths[ $name ] . '</svg>';
 }

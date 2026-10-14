@@ -1,4 +1,4 @@
-/* Konkani Jobs admin: processes the queue one job at a time and shows live progress. */
+/* Urban Emirates admin: processes the queue one job at a time and shows live progress. */
 (function () {
 	'use strict';
 

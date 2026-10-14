@@ -117,3 +117,37 @@ add_action( 'wp_loaded', function () {
 		exit;
 	}
 } );
+
+// DEV ONLY: /?kj_dev_seed=1 creates sample published jobs for design testing.
+add_action( 'wp_loaded', function () {
+	if ( ! isset( $_GET['kj_dev_seed'] ) ) {
+		return;
+	}
+	$jobs = array(
+		array( 'Staff Nurse', 'Al Noor Hospital', 'Dubai', 'uae', 'healthcare', 6000, 8000, 'AED', '2+ years', array( 'visa', 'accommodation', 'medical' ), 'Registered nurses for inpatient wards at a multi-specialty hospital. Rotating shifts.', array( 'B.Sc or GNM nursing', 'DHA licence or eligibility' ), 'https://www.linkedin.com/jobs/view/111' ),
+		array( 'Hotel Receptionist', 'Harbour Hotels', 'Doha', 'qatar', 'hospitality', 4500, 5500, 'QAR', '1–3 years', array( 'visa', 'food', 'transport' ), 'Front desk role at a busy city hotel. Good spoken English needed.', array( 'Hotel front office experience', 'Good English' ), 'https://www.bayt.com/en/qatar/jobs/222' ),
+		array( 'Senior Accountant', 'Gulf Trading Co', 'Riyadh', 'saudi-arabia', 'finance', 9000, 12000, 'SAR', '5+ years', array( 'accommodation' ), 'Lead accounts, VAT and month-end close for a trading group.', array( 'B.Com / CA Inter', 'GCC VAT experience' ), 'https://www.naukrigulf.com/job-333' ),
+		array( 'Electrician (ITI)', 'Kuwait Build Co', 'Kuwait City', 'kuwait', 'technical', 250, 350, 'KWD', '3+ years', array( 'visa', 'air_ticket' ), 'Building electrical installation and maintenance on commercial sites.', array( 'ITI Electrician', 'Gulf experience preferred' ), 'https://www.bayt.com/en/kuwait/jobs/444' ),
+		array( 'Heavy Truck Driver', 'Oman Logistics LLC', 'Muscat', 'oman', 'logistics', 280, 350, 'OMR', '2+ years', array( 'visa', 'accommodation', 'food' ), 'Long-route heavy truck driving across Oman.', array( 'Valid heavy vehicle licence', 'GCC licence is a plus' ), 'https://www.linkedin.com/jobs/view/555' ),
+		array( 'Chef de Partie', 'Example Hotels Group', 'Abu Dhabi', 'uae', 'hospitality', 4500, 6000, 'AED', '3+ years', array( 'visa', 'food', 'transport' ), '5-star hotel kitchen, continental section.', array( 'Culinary diploma', '5-star hotel experience' ), 'https://careers.example.com/chef' ),
+	);
+	foreach ( $jobs as $i => $j ) {
+		$id = wp_insert_post( array( 'post_type' => 'kj_job', 'post_status' => 'publish', 'post_title' => $j[0], 'post_content' => $j[10], 'post_date' => wp_date( 'Y-m-d H:i:s', time() - ( $i + 1 ) * 5400 ) ) );
+		$meta = array( '_kj_company' => $j[1], '_kj_city' => $j[2], '_kj_salary_min' => $j[5], '_kj_salary_max' => $j[6], '_kj_salary_currency' => $j[7], '_kj_salary_period' => 'month', '_kj_experience' => $j[8], '_kj_benefits' => $j[9], '_kj_requirements' => $j[11], '_kj_apply_url' => $j[12], '_kj_source' => kj_source_name( $j[12] ), '_kj_job_type' => 'full_time', '_kj_risk' => 'green', '_kj_state' => 'ready' );
+		foreach ( $meta as $k => $v ) { update_post_meta( $id, $k, $v ); }
+		wp_set_object_terms( $id, array( $j[3] ), 'kj_country' );
+		wp_set_object_terms( $id, array( $j[4] ), 'kj_category' );
+		KJ_Cron::set_expiry( $id );
+	}
+	echo 'seeded';
+	exit;
+} );
+add_action( 'wp_loaded', function () {
+	if ( isset( $_GET['kj_dev_fixfuture'] ) ) {
+		foreach ( get_posts( array( 'post_type' => 'kj_job', 'post_status' => 'future', 'fields' => 'ids', 'posts_per_page' => -1 ) ) as $id ) {
+			wp_update_post( array( 'ID' => $id, 'post_status' => 'publish', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - 600 ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() - 600 ) ) );
+		}
+		echo 'fixed';
+		exit;
+	}
+} );

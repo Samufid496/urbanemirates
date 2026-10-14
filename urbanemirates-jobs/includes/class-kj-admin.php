@@ -68,7 +68,9 @@ class KJ_Admin {
 		<div class="wrap kj-wrap">
 			<h1>Add Jobs</h1>
 
-			<?php if ( null !== $queued ) : ?>
+			<?php if ( 0 === $queued && 0 === $dupes ) : ?>
+				<div class="notice notice-warning"><p><strong>No jobs were found in what you pasted.</strong> Paste the job link and the full job description (at least a few lines), with a line of <code>---</code> between jobs.</p></div>
+			<?php elseif ( null !== $queued ) : ?>
 				<div class="notice notice-success"><p>
 					<strong><?php echo (int) $queued; ?> job(s) added to the queue.</strong>
 					<?php if ( $dupes ) : ?>
@@ -478,6 +480,13 @@ Hotel Receptionist – Doha
 		$out['whatsapp_channel'] = esc_url_raw( $input['whatsapp_channel'] ?? '' );
 		$out['inr_rates']        = sanitize_textarea_field( $input['inr_rates'] ?? '' );
 
+		// Ad code is HTML/JS from Google; only admins allowed to post raw HTML may save it unfiltered.
+		foreach ( array( 'ad_results', 'ad_job', 'ad_sidebar' ) as $ad ) {
+			if ( isset( $input[ $ad ] ) ) {
+				$out[ $ad ] = current_user_can( 'unfiltered_html' ) ? trim( $input[ $ad ] ) : wp_kses_post( $input[ $ad ] );
+			}
+		}
+
 		if ( (int) $old['digest_hour'] !== $out['digest_hour'] ) {
 			// Reschedule the digest at the new hour.
 			add_action( 'shutdown', array( 'KJ_Cron', 'reschedule_digest' ) );
@@ -572,6 +581,24 @@ Hotel Receptionist – Doha
 						<td><input type="url" id="kj-wa" name="kj_settings[whatsapp_channel]" value="<?php echo esc_attr( $s['whatsapp_channel'] ); ?>" class="regular-text" placeholder="https://whatsapp.com/channel/...">
 						<p class="description">Shown as a "Follow on WhatsApp" button on the site.</p></td>
 					</tr>
+				</table>
+
+				<h2>Ads (optional)</h2>
+				<p class="description">Paste Google AdSense ad unit code here once your site is approved. Leave empty for no ads. Ads never appear on the safety, sign-up, CV builder or account pages, or next to the Apply button.</p>
+				<table class="form-table" role="presentation">
+					<?php
+					$ad_fields = array(
+						'ad_results' => 'Search results (after the 5th job)',
+						'ad_job'     => 'Job page (after "You need")',
+						'ad_sidebar' => 'Desktop sidebar',
+					);
+					foreach ( $ad_fields as $key => $label ) :
+						?>
+						<tr>
+							<th scope="row"><label for="kj-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label></th>
+							<td><textarea id="kj-<?php echo esc_attr( $key ); ?>" name="kj_settings[<?php echo esc_attr( $key ); ?>]" rows="4" class="large-text code"><?php echo esc_textarea( $s[ $key ] ); ?></textarea></td>
+						</tr>
+					<?php endforeach; ?>
 				</table>
 				<?php submit_button(); ?>
 			</form>

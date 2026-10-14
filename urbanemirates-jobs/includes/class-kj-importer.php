@@ -320,7 +320,7 @@ class KJ_Importer {
 		check_admin_referer( 'kj_queue_jobs' );
 
 		$text = isset( $_POST['kj_paste'] ) ? wp_unslash( $_POST['kj_paste'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- raw job text, sanitised after Claude parses it.
-		$text = wp_check_invalid_utf8( $text );
+		$text = wp_check_invalid_utf8( $text, true ); // Drop broken characters, keep the rest of the paste.
 		$jobs = self::split_paste( $text );
 
 		list( $queued, $dupes ) = self::queue( $jobs );
