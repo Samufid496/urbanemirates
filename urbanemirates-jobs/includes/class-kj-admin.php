@@ -480,6 +480,15 @@ Hotel Receptionist – Doha
 		$out['whatsapp_channel'] = esc_url_raw( $input['whatsapp_channel'] ?? '' );
 		$out['inr_rates']        = sanitize_textarea_field( $input['inr_rates'] ?? '' );
 
+		$out['turnstile_site'] = sanitize_text_field( $input['turnstile_site'] ?? '' );
+		if ( ! empty( $input['turnstile_secret'] ) ) {
+			$out['turnstile_secret'] = sanitize_text_field( $input['turnstile_secret'] );
+		}
+		if ( ! empty( $input['clear_turnstile'] ) ) {
+			$out['turnstile_site']   = '';
+			$out['turnstile_secret'] = '';
+		}
+
 		// Ad code is HTML/JS from Google; only admins allowed to post raw HTML may save it unfiltered.
 		foreach ( array( 'ad_results', 'ad_job', 'ad_sidebar' ) as $ad ) {
 			if ( isset( $input[ $ad ] ) ) {
@@ -580,6 +589,25 @@ Hotel Receptionist – Doha
 						<th scope="row"><label for="kj-wa">WhatsApp Channel link</label></th>
 						<td><input type="url" id="kj-wa" name="kj_settings[whatsapp_channel]" value="<?php echo esc_attr( $s['whatsapp_channel'] ); ?>" class="regular-text" placeholder="https://whatsapp.com/channel/...">
 						<p class="description">Shown as a "Follow on WhatsApp" button on the site.</p></td>
+					</tr>
+				</table>
+
+				<h2>Bot protection (Cloudflare Turnstile)</h2>
+				<p class="description">Free from Cloudflare (dash.cloudflare.com → Turnstile → Add site → urbanemirates.com). Until both keys are set, forms use a hidden trap field and rate limits.</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="kj-ts-site">Site key</label></th>
+						<td><input type="text" id="kj-ts-site" name="kj_settings[turnstile_site]" value="<?php echo esc_attr( $s['turnstile_site'] ); ?>" class="regular-text" autocomplete="off"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="kj-ts-secret">Secret key</label></th>
+						<td>
+							<input type="password" id="kj-ts-secret" name="kj_settings[turnstile_secret]" class="regular-text" autocomplete="off" placeholder="<?php echo $s['turnstile_secret'] ? esc_attr( '•••••••• saved — leave blank to keep' ) : ''; ?>">
+							<?php if ( $s['turnstile_secret'] ) : ?>
+								<label><input type="checkbox" name="kj_settings[clear_turnstile]" value="1"> Remove Turnstile keys</label>
+							<?php endif; ?>
+							<p class="description"><?php echo KJ_Accounts::turnstile_enabled() ? '✅ Turnstile is on.' : 'Turnstile is off.'; ?></p>
+						</td>
 					</tr>
 				</table>
 

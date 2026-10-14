@@ -109,3 +109,25 @@ function ue_redirect_search() {
 		exit;
 	}
 }
+
+/**
+ * "Sign in" or "My account", depending on whether the visitor is signed in.
+ */
+function ue_account_link( $class ) {
+	if ( ! class_exists( 'KJ_Accounts' ) ) {
+		return;
+	}
+	if ( is_user_logged_in() ) {
+		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( KJ_Accounts::account_url() ) . '">My account</a>';
+	} else {
+		echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( KJ_Accounts::signin_url() ) . '">Sign in</a>';
+	}
+}
+
+/**
+ * Sign-in and My account print their own main heading, so the page title is skipped there.
+ */
+function ue_page_has_own_heading() {
+	$own = array( (int) get_option( 'kj_page_signin' ), (int) get_option( 'kj_page_account' ) );
+	return in_array( (int) get_the_ID(), array_filter( $own ), true );
+}

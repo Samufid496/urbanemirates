@@ -90,7 +90,9 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -.02em; }
 .ue-nav-list { display: flex; gap: 28px; margin: 0; padding: 0; list-style: none; }
 .ue-nav-list a { color: var(--ue-ink); font-weight: 600; font-size: 15px; text-decoration: none; }
 .ue-nav-list a:hover, .ue-nav-list .current-menu-item a { color: var(--ue-blue); }
-.ue-header-actions { display: flex; gap: 10px; align-items: center; }
+.ue-header-actions { display: flex; gap: 14px; align-items: center; }
+.ue-header-link { color: var(--ue-ink); font-weight: 700; font-size: 15px; text-decoration: none; }
+.ue-header-link:hover { color: var(--ue-blue); }
 .ue-menu { display: none; }
 @media (max-width: 860px) {
 	.ue-header-inner { gap: 12px; min-height: 60px; }

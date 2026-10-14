@@ -17,6 +17,8 @@ function kj_default_settings() {
 		'digest_hour'       => 8,      // Hour (site timezone) to send the daily email digest.
 		'whatsapp_channel'  => '',     // Public WhatsApp Channel link shown on the site.
 		'job_schema'        => 1,      // Output Google JobPosting structured data.
+		'turnstile_site'    => '',     // Cloudflare Turnstile site key (bot protection on forms).
+		'turnstile_secret'  => '',     // Cloudflare Turnstile secret key.
 		'ad_results'        => '',     // AdSense code shown after the 5th search result (empty = no ad).
 		'ad_job'            => '',     // AdSense code on job pages, after "You need".
 		'ad_sidebar'        => '',     // AdSense code in the desktop sidebar.
@@ -373,4 +375,49 @@ function kj_icon( $name ) {
 		return '';
 	}
 	return '<svg class="kj-icon kj-icon-' . esc_attr( $name ) . '" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $paths[ $name ] . '</svg>';
+}
+
+
+/**
+ * Send a branded HTML email. $unsubscribe_url adds an unsubscribe link and header (for job emails).
+ */
+function kj_send_email( $to, $subject, $inner_html, $unsubscribe_url = '' ) {
+	$html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:8px;color:#121A2E;line-height:1.55">'
+		. '<p style="margin:0 0 18px;font-size:22px;font-weight:900;letter-spacing:-0.5px"><span style="color:#2357E8">urban</span>emirates</p>'
+		. $inner_html
+		. '<p style="color:#8A90A2;font-size:12px;margin-top:32px;border-top:1px solid #ECEEF3;padding-top:12px">Urban Emirates · Checked Gulf jobs. Free CV builder.';
+	if ( $unsubscribe_url ) {
+		$html .= ' · <a href="' . esc_url( $unsubscribe_url ) . '" style="color:#8A90A2">Unsubscribe</a>';
+	}
+	$html .= '</p></div>';
+
+	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+	if ( $unsubscribe_url ) {
+		$headers[] = 'List-Unsubscribe: <' . esc_url_raw( $unsubscribe_url ) . '>';
+	}
+	return wp_mail( $to, $subject, $html, $headers );
+}
+
+/**
+ * Simple fixed-window rate limit. Returns false when $key has been used $max times within $window seconds.
+ */
+function kj_rate_limit( $key, $max, $window ) {
+	$name  = 'kj_rl_' . md5( $key );
+	$count = (int) get_transient( $name );
+	if ( $count >= $max ) {
+		return false;
+	}
+	set_transient( $name, $count + 1, $window );
+	return true;
+}
+
+function kj_client_ip() {
+	return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+}
+
+/**
+ * A primary-coloured email button.
+ */
+function kj_email_button( $url, $label ) {
+	return '<p style="margin:22px 0"><a href="' . esc_url( $url ) . '" style="display:inline-block;background:#2357E8;color:#ffffff;padding:13px 24px;border-radius:999px;text-decoration:none;font-weight:bold">' . esc_html( $label ) . '</a></p>';
 }

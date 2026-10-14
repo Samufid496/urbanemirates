@@ -27,6 +27,7 @@ require_once KJ_DIR . 'includes/class-kj-admin.php';
 require_once KJ_DIR . 'includes/class-kj-frontend.php';
 require_once KJ_DIR . 'includes/class-kj-alerts.php';
 require_once KJ_DIR . 'includes/class-kj-cron.php';
+require_once KJ_DIR . 'includes/class-kj-accounts.php';
 
 KJ_Post_Types::init();
 KJ_Importer::init();
@@ -34,20 +35,42 @@ KJ_Admin::init();
 KJ_Frontend::init();
 KJ_Alerts::init();
 KJ_Cron::init();
+KJ_Accounts::init();
+
+// Bump when install steps change; sites upgrade themselves on the next page load.
+define( 'KJ_SCHEMA', 2 );
+add_action( 'init', 'kj_maybe_upgrade', 20 );
 
 register_activation_hook( __FILE__, 'kj_activate' );
 register_deactivation_hook( __FILE__, 'kj_deactivate' );
 
 function kj_activate() {
 	KJ_Post_Types::register();
+	kj_install();
+	KJ_Cron::schedule();
+	flush_rewrite_rules();
+}
+
+/**
+ * Everything that must exist for the plugin to work. Safe to run again.
+ */
+function kj_install() {
 	KJ_Post_Types::seed_terms();
 	KJ_Alerts::create_table();
 	KJ_Frontend::create_pages();
-	KJ_Cron::schedule();
+	KJ_Accounts::add_role();
+	KJ_Accounts::create_pages();
 	if ( false === get_option( 'kj_settings' ) ) {
 		add_option( 'kj_settings', kj_default_settings() );
 	}
-	flush_rewrite_rules();
+	update_option( 'kj_schema', KJ_SCHEMA );
+}
+
+function kj_maybe_upgrade() {
+	if ( (int) get_option( 'kj_schema' ) < KJ_SCHEMA ) {
+		kj_install();
+		flush_rewrite_rules( false );
+	}
 }
 
 function kj_deactivate() {

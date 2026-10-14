@@ -22,6 +22,7 @@
 		</nav>
 
 		<div class="ue-header-actions">
+			<?php ue_account_link( 'ue-header-link' ); ?>
 			<a class="ue-btn ue-btn-outline ue-btn-sm" href="<?php echo esc_url( ue_page_url( 'kj_page_alerts' ) ); ?>">Job alerts</a>
 			<?php if ( ue_whatsapp_channel() ) : ?>
 				<a class="ue-btn ue-btn-wa ue-btn-sm ue-hide-sm" href="<?php echo esc_url( ue_whatsapp_channel() ); ?>" target="_blank" rel="noopener"><?php echo ue_icon( 'whatsapp' ); // phpcs:ignore WordPress.Security.EscapeOutput ?> WhatsApp</a>
@@ -35,6 +36,7 @@
 			</summary>
 			<div class="ue-menu-panel">
 				<?php ue_nav( 'primary', 'ue-menu-list' ); ?>
+				<?php ue_account_link( 'ue-btn ue-btn-primary' ); ?>
 				<a class="ue-btn ue-btn-outline" href="<?php echo esc_url( ue_page_url( 'kj_page_alerts' ) ); ?>">Job alerts</a>
 				<?php if ( ue_whatsapp_channel() ) : ?>
 					<a class="ue-btn ue-btn-wa" href="<?php echo esc_url( ue_whatsapp_channel() ); ?>" target="_blank" rel="noopener"><?php echo ue_icon( 'whatsapp' ); // phpcs:ignore WordPress.Security.EscapeOutput ?> WhatsApp channel</a>

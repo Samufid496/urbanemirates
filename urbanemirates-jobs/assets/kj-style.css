@@ -171,3 +171,55 @@
 .kj-or { margin-top: 18px; }
 .kj-btn-wa { background: var(--kj-green); color: #fff; }
 .kj-btn-wa:hover { background: #0E7A40; color: #fff; }
+
+/* Sign in */
+.kj-auth { max-width: 440px; }
+.kj-auth-title { margin: 0 0 8px; font-size: clamp(26px, 5vw, 32px); line-height: 1.12; font-weight: 900; letter-spacing: -.03em; }
+.kj-auth-sub { margin: 0 0 24px; color: var(--kj-muted); }
+.kj-auth-form { display: flex; flex-direction: column; gap: 16px; }
+.kj-auth-form .kj-btn { width: 100%; min-height: 52px; }
+.kj-input-label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; }
+.kj-input { width: 100%; min-height: 52px; padding: 0 16px; border: 1px solid var(--kj-field); border-radius: 14px; font: inherit; font-size: 16px; font-weight: 500; color: var(--kj-ink); background: #fff; }
+.kj-input:focus { outline: none; border-color: var(--kj-blue); box-shadow: 0 0 0 3px var(--kj-blue-soft); }
+.kj-input-code { font-size: 26px; font-weight: 800; letter-spacing: .4em; text-align: center; }
+.kj-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--kj-text); }
+.kj-consent input { width: 20px; height: 20px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--kj-blue); }
+.kj-auth-links { display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 18px; font-size: 14px; color: var(--kj-faint); }
+.kj-link-btn { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--kj-blue); cursor: pointer; }
+.kj .kj-auth-points { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--kj-muted); }
+.kj-auth-points li { display: flex; gap: 8px; align-items: center; }
+.kj-auth-points .kj-icon { width: 16px; height: 16px; color: var(--kj-blue); stroke-width: 2.5; }
+.kj-notice { margin: 0 0 18px; }
+
+/* My account */
+.kj-account { max-width: 640px; }
+.kj-account-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+.kj-account-hi { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -.03em; }
+.kj-account-head p { margin: 2px 0 0; }
+.kj-account-section { margin-top: 28px; }
+.kj-account-section-head { display: flex; justify-content: space-between; align-items: baseline; }
+.kj-account-section-head a { font-size: 14px; font-weight: 700; text-decoration: none; }
+.kj-account-empty { margin: 0; padding: 14px 0; border-bottom: 1px solid var(--kj-line); color: var(--kj-muted); }
+.kj-account-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--kj-line); }
+.kj-account-row-text { display: flex; flex-direction: column; }
+.kj-account-row-text .kj-muted { font-size: 13px; }
+.kj .kj-account-list { list-style: none; margin: 0; padding: 0; }
+.kj-account-list li { margin: 0; border-bottom: 1px solid var(--kj-line); }
+.kj-account-list a { display: flex; flex-direction: column; padding: 14px 0; color: var(--kj-ink); text-decoration: none; }
+.kj-account-list a:hover strong { color: var(--kj-blue); }
+.kj-account-list .kj-muted { font-size: 13px; }
+.kj-btn-sm { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.kj-btn-danger { background: var(--kj-red); color: #fff; }
+.kj-btn-danger:hover { background: #8F1C13; color: #fff; }
+.kj-delete { margin-top: 4px; }
+.kj-delete > summary { display: flex; align-items: center; min-height: 48px; color: var(--kj-red); font-weight: 700; cursor: pointer; list-style: none; }
+.kj-delete > summary::-webkit-details-marker { display: none; }
+.kj-delete form { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid #F3C7C3; border-radius: 16px; background: #FFF8F7; }
+.kj-delete p { margin: 0; color: var(--kj-text); }
+
+/* Save button on job page */
+.kj-save-form { margin: 0; display: flex; }
+.kj-save { width: 52px; height: 52px; border: 1px solid #E1E4EB; border-radius: 26px; background: #fff; cursor: pointer; }
+.kj-save.is-saved { color: var(--kj-blue); border-color: var(--kj-blue); }
+.kj-save.is-saved .kj-icon { fill: currentColor; }
+.kj-save .kj-icon { width: 20px; height: 20px; }
